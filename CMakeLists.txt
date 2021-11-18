@@ -11,11 +11,11 @@ ENDIF ()
 
 # Build shared/static
 #OPTION ( BUILD_SHARED "Build shared libraries" ON )
-#IF ( BUILD_SHARED )
+IF ( BUILD_SHARED )
     SET ( LIBRARY_TYPE SHARED )
-#ELSE ()
-#    SET ( LIBRARY_TYPE STATIC )
-#ENDIF ()
+ELSE ()
+    SET ( LIBRARY_TYPE STATIC )
+ENDIF ()
 
 # Core files
 SET ( core_SOURCES
