@@ -1,5 +1,5 @@
 /*=============================================================================|
-|  PROJECT SNAP7                                                         1.3.0 |
+|  PROJECT SNAP7                                                         1.4.1 |
 |==============================================================================|
 |  Copyright (C) 2013, 2015 Davide Nardella                                    |
 |  All rights reserved.                                                        |
@@ -541,7 +541,8 @@ int S7API Cli_GetPduLength(S7Object Client, int &Requested, int &Negotiated)
 int S7API Cli_ErrorText(int Error, char *Text, int TextLen)
 {
 	try{
-		strncpy(Text,ErrCliText(Error).c_str(),TextLen);
+		ErrCliText(Error, Text, TextLen);
+		Text[TextLen-1] = '\0';
 	}
 	catch (...){
 		return errLibInvalidParam;
@@ -892,10 +893,11 @@ int S7API Srv_SetCpuStatus(S7Object Server, int CpuStatus)
 int S7API Srv_ErrorText(int Error, char *Text, int TextLen)
 {
 	try{
-	    strncpy(Text,ErrSrvText(Error).c_str(),TextLen);
+		ErrSrvText(Error, Text, TextLen);
+		Text[TextLen-1] = '\0';
 	}
 	catch (...){
-        return errLibInvalidParam;
+		return errLibInvalidParam;
 	}
 	return 0;
 }
@@ -903,7 +905,8 @@ int S7API Srv_ErrorText(int Error, char *Text, int TextLen)
 int S7API Srv_EventText(TSrvEvent &Event, char *Text, int TextLen)
 {
 	try{
-		strncpy(Text,EvtSrvText(Event).c_str(),TextLen);
+		EvtSrvText(Event, Text, TextLen);
+		//Text[TextLen] = '\0';
 	}
 	catch (...){
 		return errLibInvalidParam;
@@ -985,6 +988,14 @@ int S7API Srv_SetReadEventsCallback(S7Object Server, pfn_SrvCallBack pCallback, 
 {
 	if (Server)
 		return PSnap7Server(Server)->SetReadEventsCallBack(pCallback, usrPtr);
+	else
+		return errLibInvalidObject;
+}
+//---------------------------------------------------------------------------
+int S7API Srv_SetRWAreaCallback(S7Object Server, pfn_RWAreaCallBack pCallback, void *usrPtr)
+{
+	if (Server)
+		return PSnap7Server(Server)->SetRWAreaCallBack(pCallback, usrPtr);
 	else
 		return errLibInvalidObject;
 }
@@ -1174,7 +1185,8 @@ int S7API Par_GetStatus(S7Object Partner, int &Status)
 int S7API Par_ErrorText(int Error, char *Text, int TextLen)
 {
 	try{
-		strncpy(Text,ErrParText(Error).c_str(),TextLen);
+		ErrParText(Error, Text, TextLen);
+		Text[TextLen - 1] = '\0';
 	}
 	catch (...){
 		return errLibInvalidParam;

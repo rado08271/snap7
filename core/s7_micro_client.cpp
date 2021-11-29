@@ -73,6 +73,9 @@ int TSnap7MicroClient::opReadArea()
      // First check : params bounds
      if ((Job.Number<0) || (Job.Number>65535) || (Job.Start<0) || (Job.Amount<1))
         return errCliInvalidParams;
+     // Second check : transport size
+	 if ((Job.WordLen==S7WLBit) && (Job.Amount>1))
+        return errCliInvalidTransportSize;
      // Request Params size
      RPSize    =sizeof(TReqFunReadItem)+2; // 1 item + FunRead + ItemsCount
      // Setup pointers (note : PDUH_out and PDU.Payload are the same pointer)
@@ -181,6 +184,9 @@ int TSnap7MicroClient::opWriteArea()
      // First check : params bounds
      if ((Job.Number<0) || (Job.Number>65535) || (Job.Start<0) || (Job.Amount<1))
         return errCliInvalidParams;
+     // Second check : transport size
+	 if ((Job.WordLen==S7WLBit) && (Job.Amount>1))
+        return errCliInvalidTransportSize;
 
      RHSize =sizeof(TS7ReqHeader)+    // Request header
              2+                       // FunWrite+ItemCount (of TReqFunWriteParams)
@@ -382,7 +388,11 @@ int TSnap7MicroClient::opReadMultiVars()
     IsoSize=RPSize+sizeof(TS7ReqHeader);
 	if (IsoSize>PDULength) 
 		return errCliSizeOverPDU;
-    Result=isoExchangeBuffer(0,IsoSize);
+	Result=isoExchangeBuffer(0,IsoSize);
+
+	if (Result!=0)
+        return Result;
+
     // Function level error
     if (Answer->Error!=0)
     	return CpuError(SwapWord(Answer->Error));
@@ -550,9 +560,13 @@ int TSnap7MicroClient::opWriteMultiVars()
 	if (IsoSize>PDULength) 
 		return errCliSizeOverPDU;
     Result=isoExchangeBuffer(0,IsoSize);
-    // Function level error
-    if (Answer->Error!=0)
-        return CpuError(SwapWord(Answer->Error));
+
+	if (Result!=0)
+		return Result;
+
+	// Function level error
+	if (Answer->Error!=0)
+		return CpuError(SwapWord(Answer->Error));
 
     if (ResParams->ItemCount!=ItemsCount)
         return errCliInvalidPlcAnswer;
@@ -714,7 +728,11 @@ int TSnap7MicroClient::opListBlocksOfType()
 		else
             ReqParams->Plen   =0x08;
 
-        ReqParams->Uk     =0x11;
+		if (First)
+			ReqParams->Uk = 0x11;
+		else
+			ReqParams->Uk = 0x12;
+
         ReqParams->Tg     =grBlocksInfo;
         ReqParams->SubFun =SFun_ListBoT;
         ReqParams->Seq    =In_Seq;
@@ -1198,7 +1216,7 @@ int TSnap7MicroClient::opUpload()
         if (Full)
         {
             opSize=int(Offset);
-            if (opSize<92)
+            if (opSize<78)
                 Result=errCliInvalidDataSizeRecvd;
         }
         else
@@ -1274,7 +1292,7 @@ int TSnap7MicroClient::opDownload()
             // Init Params
             ReqParams->FunSDwnld = pduReqDownload;
             ReqParams->Uk6[0]=0x00;
-            ReqParams->Uk6[1]=0x00;
+            ReqParams->Uk6[1]=0x01;
             ReqParams->Uk6[2]=0x00;
             ReqParams->Uk6[3]=0x00;
             ReqParams->Uk6[4]=0x00;
@@ -1634,7 +1652,7 @@ int TSnap7MicroClient::opReadSZL()
             ReqParamsFirst->Plen   =0x04;
             ReqParamsFirst->Uk     =0x11;
             ReqParamsFirst->Tg     =grSZL;
-            ReqParamsFirst->SubFun =SFun_ReadSZL;
+            ReqParamsFirst->SubFun =SFun_ReadSZL; //0x03
             ReqParamsFirst->Seq    =Seq_in;
             // Fill Data
             ReqDataFirst->Ret      =0xFF;
